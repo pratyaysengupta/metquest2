@@ -1,4 +1,4 @@
-from MSI import calculate_pairwiseMSI
+from metquest import calculate_pairwiseMSI
 
 # path = 'C:/Users/DINESH KUMAR/Desktop/STUDY/MS/gut/occular_microbiome/met_models/sbml-v2/test'
 # path = 'C:/Users/DINESH KUMAR/Desktop/STUDY/MS/gut/occular_microbiome/met_models/sbml/narrowset/HC'

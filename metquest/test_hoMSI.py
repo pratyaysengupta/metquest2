@@ -1,4 +1,4 @@
-from MSI import calculate_higherorderMSI
+from metquest import calculate_higherorderMSI
 
 # path='/data/shreyansh/MSI/carveme_GMglucgapfilled/'
 # path = 'C:/Users/DINESH KUMAR/Desktop/STUDY/MS/gut/occular_microbiome/met_models/carved/ocular_narrow_set/BKSW'
