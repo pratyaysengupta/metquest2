@@ -164,7 +164,7 @@ def _create_graph_with_exchange_reactions(G, orgs, namemap):
     return G, namemap
 
 
-def create_graph(path_name_with_models, no_of_orgs):
+def create_graph(file_names, no_of_orgs):
     """
     This function creates bipartite graph of the organisms based on the
     path provided and the number of organsisms. For instance, if a folder
@@ -174,8 +174,8 @@ def create_graph(path_name_with_models, no_of_orgs):
 
     Parameters
     ----------
-    path_name_with_models : str
-        Absolute path name of the folder containing the models.
+    file_names : list
+        List containing the file names of models
     no_of_orgs : int
         Number of organisms to be used for creating the DiGraph.
 
@@ -188,12 +188,15 @@ def create_graph(path_name_with_models, no_of_orgs):
         the model
     """
 
+    H=[]
     organisms_reaction_data, partial_name_map = \
-        fetch_reactions.segregate_reactions_from_models(path_name_with_models)
+        fetch_reactions.segregate_reactions_from_models(file_names)
     if organisms_reaction_data:
         organisms_names = list(organisms_reaction_data.keys())
         all_possible_combis = list(itertools.combinations(
             list(range(len(organisms_names))), int(no_of_orgs)))
+        if int(no_of_orgs)>1 and sorted(organisms_names)[0][0]=='0':
+            all_possible_combis = all_possible_combis[:len(organisms_names)-1]
         if all_possible_combis:
             for ncom in range(len(all_possible_combis)):
                 file_name = ''
@@ -204,17 +207,23 @@ def create_graph(path_name_with_models, no_of_orgs):
                     file_name = file_name + \
                         organisms_names[all_possible_combis[ncom]
                                         [numincom]] + '_'
-                H = _create_graph_with_internal_reaction(current_combination)
-                H, full_name_map = _create_graph_with_exchange_reactions(
-                    H, current_combination, partial_name_map)              
-                print('Number of edges in graph', len(H.edges()))
-                print('Number of nodes in graph', len(H.nodes()))
+                H.append(_create_graph_with_internal_reaction(current_combination))
+                temp, full_name_map = _create_graph_with_exchange_reactions(
+                    H[ncom], current_combination, partial_name_map)
+                H[ncom]=temp
+                print(len(H), H[ncom])
+                print('Number of edges in graph', len(H[ncom].edges()))
+                print('Number of nodes in graph', len(H[ncom].nodes()))
+
+                # Uncomment the following code to save the graph files externally in your machine
+                # Note: Graph files can occupy a large space for large datasets
+                '''
                 if os.access(path_name_with_models, os.W_OK):
                     with open(file_name + 'namemap' + '.pickle', 'wb') as filetodump:
                         dump(full_name_map, filetodump)
-                    nx.write_gpickle(H, file_name + '.gpickle')
+                    nx.write_gpickle(H[ncom], file_name + '.gpickle')
                     print('Graph and namemap saved for file(s) in', path_name_with_models)
-            sys.path.append(path_name_with_models)
+                '''
         else:
             print(
                 'Number of organisms for creating a consortium graph is more than the models given')

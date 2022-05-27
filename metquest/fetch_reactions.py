@@ -8,7 +8,7 @@ import cobra
 from metquest.get_reaction_types import find_different_reaction_types
 
 
-def segregate_reactions_from_models(path_name):
+def segregate_reactions_from_models(file_names):
     """
     This function gets the data pertaining to the reactions and the
     metabolites from the models of multiple organisms.
@@ -19,8 +19,8 @@ def segregate_reactions_from_models(path_name):
 
     Parameters
     ----------
-    path_name : str
-        full path name where the model files are
+    file_names : list
+        List of files names of models
 
     Returns
     -------
@@ -34,11 +34,6 @@ def segregate_reactions_from_models(path_name):
     """
     all_organisms_info = {}
     namemap = {}
-    os.chdir(path_name)
-    file_names = glob.glob('*.xml')
-    if not file_names:
-        print("There are no .xml files. Please check the path")
-    print("Filenames", file_names)
     for model_names in file_names:
         model = cobra.io.read_sbml_model(model_names)
         stoi = cobra.util.array.create_stoichiometric_matrix(model)
