@@ -7,3 +7,10 @@ from .pathway_assembler import find_pathways
 from .construct_graph import create_graph
 from .package_data import __version__
 from .example.run_this_example import *
+from .find_transport_rxns import *
+from .pairwiseMSI import calculate_pairwiseMSI
+from .higherorderMSI import calculate_higherorderMSI
+from .get_acceptors import *
+from .get_donors import *
+from .extract_exc_mets import *
+from .medium import minimal_media_from_cobrapy

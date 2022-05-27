@@ -3,3 +3,7 @@ numpy
 scipy
 python-libsbml
 networkx
+seaborn
+matplotlib
+pandas
+pyvis
