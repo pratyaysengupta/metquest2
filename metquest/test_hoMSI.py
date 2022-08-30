@@ -2,7 +2,7 @@ from metquest import calculate_higherorderMSI
 
 # path='/data/shreyansh/MSI/carveme_GMglucgapfilled/'
 # path = 'C:/Users/DINESH KUMAR/Desktop/STUDY/MS/gut/occular_microbiome/met_models/carved/ocular_narrow_set/BKSW'
-path = r'C:\Users\dines\IIT-Madras(IC&SR)\IITM-LVPEI - IITM - IITM\occular_microbiome\met_models\sbml-v2\narrowset\BKCR\Run2'
+path = r'C:\Users\dines\IIT-Madras(IC&SR)\IITM-LVPEI - IITM - IITM\occular_microbiome\met_models\sbml-v2\test'
 # path = 'C:/Users/DINESH KUMAR/Desktop/STUDY/MS/gut/guaymas_microbiome/\
 # Guaymas_metmodels_v2/allmedia_guaymas/'
 
