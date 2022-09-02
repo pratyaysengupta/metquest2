@@ -113,8 +113,8 @@ def make_perturbed_community(rem_org, pert_models, pert_community):
     return pert_models, pert_community
 
 
-def perform_task(cluster_file, sd_file, model, transport_rxns, pert_community, org_info,
-                 org_info_wo_trans_rxn, rem_org_list, new_models, n):
+def perform_task(cluster_file, sd_file, model, transport_rxns, pert_community,
+                 org_info_wo_trans_rxn, rem_org_list, n):
     org_info_pert, scope_pert, namemap_pert = \
         find_stuck_rxns(model, pert_community, sd_file, len(pert_community))
     org_info_pert = decrypt_org_info(org_info_pert, namemap_pert)
@@ -122,8 +122,8 @@ def perform_task(cluster_file, sd_file, model, transport_rxns, pert_community, o
     for i in org_info_pert:
         org_info_pert_wo_trans_rxn[i] = list(set(org_info_pert[i]) - set(transport_rxns))
 
-    g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-             os.path.basename(sd_file).replace('.txt', '') + '/community_without_C' + str(n) + '.csv', 'w')
+    g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
+             os.path.basename(sd_file).replace('.txt', '') + '/Community_without_clus' + str(n) + '.csv', 'w')
     for m in org_info_pert_wo_trans_rxn:
         g.write(m + ',' + str(len(org_info_pert_wo_trans_rxn[m])) + '\n')
     g.close()
@@ -136,137 +136,38 @@ def perform_task(cluster_file, sd_file, model, transport_rxns, pert_community, o
         stuck_pert_com += len(org_info_pert_wo_trans_rxn[i])
     msi = 1 - (stuck_com / stuck_pert_com)
     print(n, 'th cluster')
+    return org_info_pert, org_info_pert_wo_trans_rxn, msi
 
-    if msi:
-        relieved, detailed_rel_rxns, rel_rxns_name = find_relievedrxns(new_models, org_info,
-                                                                       org_info_pert)
-        g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '')
-                 + '_' + os.path.basename(sd_file).replace('.txt', '') +
-                 '/data_analysis/relieved_rxns_' + str(n) + '.tsv', 'w')
-        g.write('acceptor\trelieved reactions\n')
 
-        for i in relieved:
-            g.write(i + '\t')
-            rel_rxns = list(set(relieved[i]))
-            det_rel_rxns = list(set(detailed_rel_rxns[i]))
-            rel_rxn_nam = list(set(rel_rxns_name[i]))
-            for j in rel_rxns:
-                g.write(j + '\t')
-            g.write('\n')
-            g.write('\t')
-            for d in rel_rxn_nam:
-                g.write(d + '\t')
-            g.write('\n')
-            g.write('\t')
-            for k in det_rel_rxns:
-                g.write(k + '\t')
-            g.write('\n')
-        g.close()
+def write_relieved_rxns(g, relieved, detailed_rel_rxns, rel_rxns_name):
+    g.write('acceptor\trelieved reactions\n')
 
-        with open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-                  os.path.basename(sd_file).replace('.txt', '') +
-                  '/data_analysis/clus' + str(n) + '.csv', 'w') as h:
-            h.write('clus' + str(n) + '\n')
-            for i in rem_org_list:
-                h.write(i + '\n')
-            h.write('num of rxns relieved in the below orgs in the presence of clust' + str(n) + '\n')
-            h.write(
-                'org,unpert,clust_' + str(
-                    n) + 'KO,rxns relieved\n')
-            Nrelieved = {}
-            for i in org_info_pert_wo_trans_rxn:
-                Nrelieved[i] = len(org_info_pert_wo_trans_rxn[i]) - len(org_info_wo_trans_rxn[i])
-                if Nrelieved[i]:
-                    h.write(i + ',' + str(len(org_info_wo_trans_rxn[i])) + ',' + str(
-                        len(org_info_pert_wo_trans_rxn[i])) + ',' + str(Nrelieved[i]) + '\n')
-            print('clus' + str(n))
-    return msi
+    for i in relieved:
+        g.write(i + '\t')
+        rel_rxns = list(set(relieved[i]))
+        det_rel_rxns = list(set(detailed_rel_rxns[i]))
+        rel_rxn_nam = list(set(rel_rxns_name[i]))
+        for j in rel_rxns:
+            g.write(j + '\t')
+        g.write('\n')
+        g.write('\t')
+        for d in rel_rxn_nam:
+            g.write(d + '\t')
+        g.write('\n')
+        g.write('\t')
+        for k in det_rel_rxns:
+            g.write(k + '\t')
+        g.write('\n')
 
-# def do_something(list1, list2, sd_file, cluster_file, path, model):
-#     f = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-#              os.path.basename(sd_file).replace('.txt', '') + '/higher_order_msi.csv', 'w')
-#     for n in rem_org_list1:
-#         os.chdir(path)
-#         new_models = model.copy()
-#         new_community = glob.glob('*.xml')
-#         if not new_community:
-#             new_community = glob.glob('*.sbml')
-#         new_community.sort()
-#         for i in rem_org_list1[n]:
-#             if i in new_community:
-#                 new_models.remove(new_models[new_community.index(i)])
-#                 new_community.remove(i)
-#         org_info_pert, scope_pert, namemap_pert = \
-#             find_stuck_rxns(model, new_community, sd_file, len(new_community))
-#         org_info_pert = decrypt_org_info(org_info_pert, namemap_pert)
-#         org_info_pert_wo_trans_rxn = {}
-#         for i in org_info_pert:
-#             org_info_pert_wo_trans_rxn[i] = list(set(org_info_pert[i]) - set(transport_rxns))
-#
-#         g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-#                  os.path.basename(sd_file).replace('.txt', '') + '/community_without_C' + str(n) + '.csv', 'w')
-#         for m in org_info_pert_wo_trans_rxn:
-#             g.write(m + ',' + str(len(org_info_pert_wo_trans_rxn[m])) + '\n')
-#         g.close()
-#         stuck_com = 0
-#         stuck_pert_com = 0
-#         for i in org_info_wo_trans_rxn:
-#             if i not in rem_org_list2[n]:
-#                 stuck_com += len(org_info_wo_trans_rxn[i])
-#         for i in org_info_pert_wo_trans_rxn:
-#             stuck_pert_com += len(org_info_pert_wo_trans_rxn[i])
-#         msi = 1 - (stuck_com / stuck_pert_com)
-#         for i in rem_org_list2[n]:
-#             f.write('all,C_' + str(n) + '#' + i + ',' + str(msi) + '\n')
-#         print(n, 'th cluster')
-#
-#         if msi:
-#             relieved, detailed_rel_rxns, rel_rxns_name = find_relievedrxns(new_models, org_info,
-#                                                                            org_info_pert)
-#             g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '')
-#                      + '_' + os.path.basename(sd_file).replace('.txt', '') +
-#                      '/data_analysis/relieved_rxns_' + str(n) + '.tsv', 'w')
-#             g.write('acceptor\trelieved reactions\n')
-#
-#             for i in relieved:
-#                 g.write(i + '\t')
-#                 rel_rxns = list(set(relieved[i]))
-#                 det_rel_rxns = list(set(detailed_rel_rxns[i]))
-#                 rel_rxn_nam = list(set(rel_rxns_name[i]))
-#                 for j in rel_rxns:
-#                     g.write(j + '\t')
-#                 g.write('\n')
-#                 g.write('\t')
-#                 for d in rel_rxn_nam:
-#                     g.write(d + '\t')
-#                 g.write('\n')
-#                 g.write('\t')
-#                 for k in det_rel_rxns:
-#                     g.write(k + '\t')
-#                 g.write('\n')
-#             g.close()
-#
-#             with open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-#                       os.path.basename(sd_file).replace('.txt', '') +
-#                       '/data_analysis/clus' + str(n) + '.csv', 'w') as h:
-#                 h.write('clus' + str(n) + '\n')
-#                 for i in rem_org_list2[n]:
-#                     h.write(i + '\n')
-#                 h.write('num of rxns relieved in the below orgs in the presence of clust' + str(n) + '\n')
-#                 h.write(
-#                     'org,unpert,clust_' + str(
-#                         n) + 'KO,rxns relieved,cluster it belongs to,tot num of orgs in that cluster\n')
-#                 Nrelieved = {}
-#                 for i in org_info_pert_wo_trans_rxn:
-#                     Nrelieved[i] = len(org_info_pert_wo_trans_rxn[i]) - len(org_info_wo_trans_rxn[i])
-#                     if Nrelieved[i]:
-#                         h.write(i + ',' + str(len(org_info_wo_trans_rxn[i])) + ',' + str(
-#                             len(org_info_pert_wo_trans_rxn[i])) + ',' + str(Nrelieved[i]) + ',')
-#                         for nclus in rem_org_list2:
-#                             if i in rem_org_list2[nclus]:
-#                                 h.write(str(nclus) + ',' + str(len(rem_org_list2[nclus])) + '\n')
-#                 print('clus' + str(n))
-#     f.close()
+
+def write_relieved_rxn_metadata(h, org_info_wo_trans_rxn, org_info_pert_wo_trans_rxn):
+    nrelieved = {}
+    for i in org_info_pert_wo_trans_rxn:
+        nrelieved[i] = len(org_info_pert_wo_trans_rxn[i]) - len(org_info_wo_trans_rxn[i])
+        if nrelieved[i]:
+            h.write(i + ',' + str(len(org_info_wo_trans_rxn[i])) + ',' + str(
+                len(org_info_pert_wo_trans_rxn[i])) + ',' + str(nrelieved[i]) + '\n')
+
 
 def calculate_higherorderMSI(path, sd_file, cluster_file):
     os.chdir(path)
@@ -287,12 +188,12 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
     for i in org_info:
         org_info_wo_trans_rxn[i] = list(set(org_info[i]) - set(transport_rxns))
 
-    if not os.path.exists('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') +
+    if not os.path.exists('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') +
                           '_' + os.path.basename(sd_file).replace('.txt', '') + '/data_analysis'):
-        os.makedirs('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
+        os.makedirs('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
                     os.path.basename(sd_file).replace('.txt', '') + '/data_analysis')
-    f = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
-             os.path.basename(sd_file).replace('.txt', '') + '/communityALL.csv', 'w')
+    f = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
+             os.path.basename(sd_file).replace('.txt', '') + '/community_unperturbed.csv', 'w')
     for i in org_info_wo_trans_rxn:
         f.write(i + ',' + str(len(org_info_wo_trans_rxn[i])) + '\n')
     f.close()
@@ -319,7 +220,7 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
     for nclus in rem_org_list2:
         rem_org_list2[nclus] = [x.replace('.xml', '') for x in rem_org_list2[nclus]]
 
-    f = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.txt', '') + '_' +
+    f = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
              os.path.basename(sd_file).replace('.txt', '') + '/higher_order_msi.csv', 'w')
     for n in rem_org_list1:
         os.chdir(path)
@@ -330,17 +231,64 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
         new_community.sort()
 
         pert_models, pert_community = make_perturbed_community(rem_org_list1[n], new_models, new_community)
-        ko_models, ko_community = make_perturbed_community(pert_community, new_models, new_community)
 
-        msi = perform_task(cluster_file, sd_file, model, transport_rxns, pert_community, org_info,
-                           org_info_wo_trans_rxn, rem_org_list2[n], pert_models, n)
+        org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, model, transport_rxns,
+                                                                      pert_community, org_info_wo_trans_rxn,
+                                                                      rem_org_list2[n], n)
         for i in rem_org_list2[n]:
-            f.write('all,C_' + str(n) + '#' + i + ',' + str(msi) + '\n')
+            f.write('Comm,clus_' + str(n) + '#' + i + ',' + str(msi) + '\n')
 
-        ko_org_list = [x.replace('.xml', '') for x in ko_community]
-        msi = perform_task(cluster_file, sd_file, model, transport_rxns, ko_community, org_info,
-                           org_info_wo_trans_rxn, ko_org_list, ko_models, n)
-        for i in ko_org_list:
-            f.write('C_' + str(n) + '#' + i + ',all' + str(msi) + '\n')
+        if msi:
+            relieved, detailed_rel_rxns, rel_rxns_name = find_relievedrxns(pert_models, org_info, org_info_pert)
+            g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '')
+                     + '_' + os.path.basename(sd_file).replace('.txt', '') +
+                     '/data_analysis/relieved_rxns_Comm--clus' + str(n) + '.tsv', 'w')
+            write_relieved_rxns(g, relieved, detailed_rel_rxns, rel_rxns_name)
+            g.close()
+
+            h = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
+                     os.path.basename(sd_file).replace('.txt', '') + '/data_analysis/Comm--clus' + str(n) + '.csv', 'w')
+            h.write('Comm--clus' + str(n) + '\n')
+            for i in rem_org_list2[n]:
+                h.write(i + '\n')
+            h.write('num of rxns relieved in the below orgs in the presence of clust' + str(n) + '\n')
+            h.write('org,unpert,clust_' + str(n) + 'KO,rxns relieved\n')
+            write_relieved_rxn_metadata(h, org_info_wo_trans_rxn, org_info_pert_wo_trans_rxn)
+            h.close()
+            print('Comm--clus' + str(n))
+
+        os.chdir(path)
+        new_models = model.copy()
+        new_community = glob.glob('*.xml')
+        if not new_community:
+            new_community = glob.glob('*.sbml')
+        new_community.sort()
+        ko_models, ko_community = make_perturbed_community(pert_community, new_models, new_community)
+        ko_org_list = [x.replace('.xml', '') for x in pert_community]
+        if len(ko_org_list) < len(model):
+            org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, model, transport_rxns,
+                                                                          ko_community, org_info_wo_trans_rxn,
+                                                                          ko_org_list, n)
+            for i in ko_org_list:
+                f.write('clus_' + str(n) + '#' + i + ',Comm,' + str(msi) + '\n')
+
+            if msi:
+                relieved, detailed_rel_rxns, rel_rxns_name = find_relievedrxns(ko_models, org_info, org_info_pert)
+                g = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '')
+                         + '_' + os.path.basename(sd_file).replace('.txt', '') +
+                         '/data_analysis/relieved_rxns_clus--Comm' + str(n) + '.tsv', 'w')
+                write_relieved_rxns(g, relieved, detailed_rel_rxns, rel_rxns_name)
+                g.close()
+
+                h = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
+                         os.path.basename(sd_file).replace('.txt', '') + '/data_analysis/clus' + str(n) + '--Comm.csv', 'w')
+                h.write('clus' + str(n) + '--Comm\n')
+                for i in ko_org_list:
+                    h.write(i + '\n')
+                h.write('num of rxns relieved in the below orgs in the presence of clust' + str(n) + '\n')
+                h.write('org,unpert,commKO,rxns relieved\n')
+                write_relieved_rxn_metadata(h, org_info_wo_trans_rxn, org_info_pert_wo_trans_rxn)
+                h.close()
+                print('clus' + str(n) + '--Comm')
 
     f.close()
