@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import glob
 import warnings
@@ -71,6 +72,28 @@ def find_relieved_rxn(model, seed_name, org_info_single, org_info_pair):
     print('relieved reactions are written at:\n', relieved_rxn_output_file)
 
 
+def preprocess_seedmets(seedmet_file, model):
+    f = open(seedmet_file, 'r')
+    seedmets, temp_seedmets = [], []
+    while True:
+        l = f.readline().strip()
+        if l == '': break
+        temp_seedmets.append(l)
+    f.close()
+
+    exc_rxns = model[0].exchanges
+    met_id = list(exc_rxns[0].metabolites.keys())[0].id
+    pattern = re.compile(r'[_[][a-z]\d*[]]*')
+    exc_marker = pattern.findall(met_id)
+
+    for m in model:
+        for i in temp_seedmets:
+            seedmets.append(m.id + ' ' + i + exc_marker[0])
+            seedmets.append(m.id + ' ' + i + exc_marker[0].replace('e', 'c'))
+
+    return set(seedmets)
+
+
 def find_stuck_rxns(model, community, seedmet_file, no_of_orgs):
     """
     Constructs graphs using MetQuest and finds all stuck reactions in the cellular compartment
@@ -88,20 +111,8 @@ def find_stuck_rxns(model, community, seedmet_file, no_of_orgs):
     G, full_name_map = mq.construct_graph.create_graph(community, no_of_orgs)
     if not os.path.exists('results'):
         os.makedirs('results')
-    f = open(seedmet_file, 'r')
 
-    # Reading seed metabolites
-
-    seedmets, temp_seedmets = [], []
-    while True:
-        l = f.readline().strip()
-        if l == '': break
-        temp_seedmets.append(l)
-    f.close()
-    for m in model:
-        for i in temp_seedmets:
-            seedmets.append(m.id + ' ' + i)
-    seedmets = set(seedmets)
+    seedmets = preprocess_seedmets(seedmet_file, model)
 
     all_possible_combis = list(itertools.combinations(list(range(len(community))), int(no_of_orgs)))
     if no_of_orgs > 1 and sorted(community)[0][0] == '0':
