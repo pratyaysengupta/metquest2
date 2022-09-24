@@ -16,14 +16,14 @@ def get_donors(filename):
     data = temp.split('\n')
     rxns_collection = []
     for i in range(1, len(data), 3):
-        line = data[i].strip().split('\t')
+        line = data[i].strip().split(',')
         rxns_collection += line[2:]
     rxns_collection = list(set(rxns_collection))
     donor_dict = {}
     for r in rxns_collection:
         donor_dict[r] = []
         for i in range(1, len(data), 3):
-            line = data[i].strip().split('\t')
+            line = data[i].strip().split(',')
             if r in line[2:]:
                 donor_dict[r].append(line[1])
         donor_dict[r] = list(set(donor_dict[r]))
