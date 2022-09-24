@@ -1,9 +1,12 @@
 import pandas as pd
 import re
+import glob
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 from metquest import construct_graph
+from metquest import find_stuck_rxns
+from metquest import get_models
 from pyvis.network import Network
 from pyvis.options import Layout
 
@@ -42,10 +45,26 @@ def get_exc_metabolites(filename, seedmet_file):
     return exc_mets
 
 
-def write_exc_metabolites(filename, seedmet_file):
-    exc_mets = get_exc_metabolites(filename, seedmet_file)
-    df_exc_mets = pd.DataFrame.from_dict(exc_mets, orient="index")
-    df_exc_mets.to_csv(filename.replace('.tsv', '')+ '_exc_mets.csv')
+def write_exc_metabolites(path_to_models, relrxns_filename, seedmet_file):
+    exc_mets = get_exc_metabolites(relrxns_filename, seedmet_file)
+    community = glob.glob(path_to_models+'/*.xml')
+    extension = '.xml'
+    if not community:
+        community = glob.glob(path_to_models+'/*.sbml')
+        extension = '.sbml'
+    community.sort()
+    model = get_models(community)
+
+    org_info_single, scope_sin, namemap_sin, vis = find_stuck_rxns(model, community, seedmet_file, 1)
+    refined_exc_mets = {}
+    for i in exc_mets:
+        acceptor = i.split(',')[0].replace(extension, '')
+        scope_sin[acceptor + '_' + acceptor] = [x.replace(acceptor+' ', '').replace('_c0', '_e0')
+                                                for x in scope_sin[acceptor + '_' + acceptor]]
+        refined_exc_mets[i] = [x for x in exc_mets[i] if x not in scope_sin[acceptor + '_' + acceptor]]
+
+    df_exc_mets = pd.DataFrame.from_dict(refined_exc_mets, orient="index")
+    df_exc_mets.to_csv(relrxns_filename.replace('.tsv', '') + '_refined_exc_mets.csv')
 
 
 def get_excmet_stats(filename):
@@ -77,7 +96,7 @@ def write_excmet_stats(filename):
 def plot_excmet_count(filename):
     mets = get_excmet_stats(filename)
     exc_mets = pd.DataFrame(mets.items(), columns=['metabolites', 'exchange frequency'])
-    sns.set(rc={'figure.figsize': (16, 8.27)})
+    sns.set(rc={'figure.figsize': (16, 8.35)})
     ax = sns.barplot(exc_mets['metabolites'], exc_mets['exchange frequency'],
                      palette='Set1',
                      order=exc_mets.sort_values('exchange frequency', ascending=False).metabolites,

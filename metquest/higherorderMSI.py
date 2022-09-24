@@ -5,6 +5,7 @@ import warnings
 import itertools
 
 import pandas as pd
+import cobra
 
 import metquest as mq
 from metquest import find_transport_rxns
@@ -72,7 +73,7 @@ def find_stuck_rxns(model, community, seedmet_file, no_of_orgs):
         for j in range(len(all_possible_combis[i])):
             stuck = []
             rxnNode = []
-            model1 = community[all_possible_combis[i][j]].replace('.xml', '')
+            model1 = model[all_possible_combis[i][j]].id
             visited = list(sd.keys())
             for r in G[i].nodes:
                 if r.find(model1) >= 0:
@@ -105,12 +106,14 @@ def decrypt_org_info(org_info, namemap):
 
 
 def make_perturbed_community(rem_org, pert_models, pert_community):
+    pert_model_ids = [i.id for i in pert_models]
     for i in rem_org:
-        if i in pert_community:
-            pert_models.remove(pert_models[pert_community.index(i)])
-            pert_community.remove(i)
+        if i in pert_model_ids:
+            pert_models.remove(pert_models[pert_model_ids.index(i)])
+            pert_community.remove(pert_community[pert_model_ids.index(i)])
+            pert_model_ids.remove(i)
 
-    return pert_models, pert_community
+    return pert_models, pert_community, pert_model_ids
 
 
 def perform_task(cluster_file, sd_file, model, transport_rxns, pert_community,
@@ -199,22 +202,26 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
     f.close()
 
     if cluster_file == 'individual_clusters':
-        file_names = glob.glob('*.xml')
-        if not file_names:
-            file_names = glob.glob('*.sbml')
-        rem_org_list1 = []
-        rem_org_list2 = []
-        for i in file_names:
-            rem_org_list1.append([i])
-            rem_org_list2.append([i])
-        for nclus in range(len(rem_org_list2)):
-            for i in range(len(rem_org_list2[nclus])):
-                rem_org_list2[nclus][i] = rem_org_list2[nclus][i].replace('.xml', '')
+        # file_names = glob.glob('*.xml')
+        # if not file_names:
+        #     file_names = glob.glob('*.sbml')
+        rem_org_list1 = {}
+        rem_org_list2 = {}
+
+        for i in range(len(model)):
+            rem_org_list1[i] = [model[i].id]
+            rem_org_list2[i] = [model[i].id]
+
     else:
         cluster_data = pd.read_csv(cluster_file, sep=',')
         rem_org_list1 = cluster_data.set_index('Cluster').T.to_dict('list')
         for n in rem_org_list1:
             rem_org_list1[n] = [j for j in rem_org_list1[n] if pd.isna(j) is False]
+        # model_ids = [i.id for i in model]
+        for n in rem_org_list1:
+            rem_org_list1[n] = [cobra.io.read_sbml_model(i).id for i in rem_org_list1[n]]
+            # rem_org_list1[n] = [model_ids[model_ids.index(i)] for i in rem_org_list1[n]]
+
         rem_org_list2 = rem_org_list1.copy()
 
     for nclus in rem_org_list2:
@@ -230,9 +237,9 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
             new_community = glob.glob('*.sbml')
         new_community.sort()
 
-        pert_models, pert_community = make_perturbed_community(rem_org_list1[n], new_models, new_community)
+        pert_models, pert_community, pert_model_ids = make_perturbed_community(rem_org_list1[n], new_models, new_community)
 
-        org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, model, transport_rxns,
+        org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, pert_models, transport_rxns,
                                                                       pert_community, org_info_wo_trans_rxn,
                                                                       rem_org_list2[n], n)
         for i in rem_org_list2[n]:
@@ -263,13 +270,13 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
         if not new_community:
             new_community = glob.glob('*.sbml')
         new_community.sort()
-        ko_models, ko_community = make_perturbed_community(pert_community, new_models, new_community)
-        ko_org_list = [x.replace('.xml', '') for x in pert_community]
+        ko_models, ko_community, model_ids = make_perturbed_community(pert_model_ids, new_models, new_community)
+        ko_org_list = [x for x in pert_model_ids]
         if len(ko_org_list) < len(model):
-            org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, model, transport_rxns,
-                                                                          ko_community, org_info_wo_trans_rxn,
-                                                                          ko_org_list, n)
-            for i in ko_org_list:
+            org_info_pert, org_info_pert_wo_trans_rxn, msi = perform_task(cluster_file, sd_file, ko_models,
+                                                                          transport_rxns, ko_community,
+                                                                          org_info_wo_trans_rxn, ko_org_list, n)
+            for i in ko_community:
                 f.write('clus_' + str(n) + '#' + i + ',Comm,' + str(msi) + '\n')
 
             if msi:
@@ -281,11 +288,12 @@ def calculate_higherorderMSI(path, sd_file, cluster_file):
                 g.close()
 
                 h = open('results/clusterKO_' + os.path.basename(cluster_file).replace('.csv', '') + '_' +
-                         os.path.basename(sd_file).replace('.txt', '') + '/data_analysis/clus' + str(n) + '--Comm.csv', 'w')
+                         os.path.basename(sd_file).replace('.txt', '') + '/data_analysis/clus' + str(n) + '--Comm.csv',
+                         'w')
                 h.write('clus' + str(n) + '--Comm\n')
                 for i in ko_org_list:
                     h.write(i + '\n')
-                h.write('num of rxns relieved in the below orgs in the presence of clust' + str(n) + '\n')
+                h.write('num of rxns relieved in the below orgs in the presence of Comm')
                 h.write('org,unpert,commKO,rxns relieved\n')
                 write_relieved_rxn_metadata(h, org_info_wo_trans_rxn, org_info_pert_wo_trans_rxn)
                 h.close()

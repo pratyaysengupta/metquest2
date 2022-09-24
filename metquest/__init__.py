@@ -9,6 +9,7 @@ from .package_data import __version__
 from .example.run_this_example import *
 from .find_transport_rxns import *
 from .pairwiseMSI import calculate_pairwiseMSI
+from .pairwiseMSI import find_stuck_rxns
 from .higherorderMSI import calculate_higherorderMSI
 from .get_acceptors import *
 from .get_donors import *

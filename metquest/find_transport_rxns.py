@@ -2,6 +2,17 @@ import cobra
 import re
 
 
+def get_models(file_names):
+    model = []
+    for i in range(len(file_names)):
+        temp = cobra.io.read_sbml_model(file_names[i])
+        if temp.id == '':
+            temp.id = file_names[i].split('.')[0]
+        model.append(temp)
+
+    return model
+
+
 def find_transport_rxns(file_names):
     """
     This function finds all the transport and extracellular reactions in all models
@@ -9,9 +20,7 @@ def find_transport_rxns(file_names):
     :return:
         trans_rxn: list of transport and extracellular reactions in all models
     """
-    model = []
-    for i in range(len(file_names)):
-        model.append(cobra.io.read_sbml_model(file_names[i]))
+    model = get_models(file_names)
     exc_rxns = model[0].exchanges
     met_id = list(exc_rxns[0].metabolites.keys())[0].id
     pattern = re.compile(r'[_[][a-z]\d*[]]*')
