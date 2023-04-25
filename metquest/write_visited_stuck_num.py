@@ -5,8 +5,8 @@ import glob
 import os
 import pandas as pd
 
-path = r'C:\Users\dines\Documents\plant-microbiome\models\R2A'
-seedmet_file = r'C:\Users\dines\Documents\plant-microbiome\models\R2A\R2A_edition.txt'
+path = r'C:\Users\dines\Documents\plant-microbiome\models\test'
+seedmet_file = r'C:\Users\dines\Documents\plant-microbiome\models\MOPS\MOPS_Glu.txt'
 os.chdir(path)
 
 file_names = glob.glob('*.xml')

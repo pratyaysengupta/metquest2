@@ -3,7 +3,7 @@ import glob
 import sys
 import warnings
 import itertools
-
+import re
 import pandas as pd
 import cobra
 
@@ -36,6 +36,28 @@ def find_relievedrxns(model, org_info, org_info_pert):
     return relieved, detailed_rel_rxns, rel_rxns_name
 
 
+def preprocess_seedmets(seedmet_file, model):
+    f = open(seedmet_file, 'r')
+    seedmets, temp_seedmets = [], []
+    while True:
+        l = f.readline().strip()
+        if l == '': break
+        temp_seedmets.append(l)
+    f.close()
+
+    exc_rxns = model[0].exchanges
+    met_id = list(exc_rxns[0].metabolites.keys())[0].id
+    pattern = re.compile(r'[_[][a-z]\d*[]]*')
+    exc_marker = pattern.findall(met_id)
+
+    for m in model:
+        for i in temp_seedmets:
+            seedmets.append(m.id + ' ' + i + exc_marker[0])
+            seedmets.append(m.id + ' ' + i + exc_marker[0].replace('e', 'c'))
+
+    return set(seedmets)
+
+
 def find_stuck_rxns(model, community, seedmet_file, no_of_orgs):
     # Constructing graphs
 
@@ -45,19 +67,7 @@ def find_stuck_rxns(model, community, seedmet_file, no_of_orgs):
         os.makedirs('results')
     f = open(seedmet_file, 'r')
 
-    # Reading seed metabolites
-
-    seedmets, temp_seedmets = [], []
-    while True:
-        l = f.readline().strip()
-        if l == '': break
-        temp_seedmets.append(l)
-    f.close()
-
-    for m in model:
-        for i in temp_seedmets:
-            seedmets.append(m.id + ' ' + i)
-    seedmets = set(seedmets)
+    seedmets = preprocess_seedmets(seedmet_file, model)
 
     all_possible_combis = list(itertools.combinations(list(range(len(community))), int(no_of_orgs)))
     if no_of_orgs > 1 and sorted(community)[0][0] == '0':

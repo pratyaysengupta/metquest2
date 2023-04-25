@@ -59,7 +59,7 @@ def write_exc_metabolites(path_to_models, relrxns_filename, seedmet_file):
     refined_exc_mets = {}
     for i in exc_mets:
         acceptor = i.split(',')[0].replace(extension, '')
-        scope_sin[acceptor + '_' + acceptor] = [x.replace(acceptor+' ', '').replace('_c0', '_e0')
+        scope_sin[acceptor + '_' + acceptor] = [x.replace(acceptor+' ', '').replace('_c', '_e')
                                                 for x in scope_sin[acceptor + '_' + acceptor]]
         refined_exc_mets[i] = [x for x in exc_mets[i] if x not in scope_sin[acceptor + '_' + acceptor]]
 
